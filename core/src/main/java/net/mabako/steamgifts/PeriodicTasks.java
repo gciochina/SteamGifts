@@ -40,7 +40,7 @@ public class PeriodicTasks {
      * Task definitions for regularly executed tasks.
      */
     public enum Task {
-        CHECK_FOR_MESSAGES(AlarmManager.INTERVAL_HALF_HOUR, CheckForNewMessages.class);
+        CHECK_FOR_MESSAGES(AlarmManager.INTERVAL_HOUR, CheckForNewMessages.class);
 
         private final long interval;
         private final Class<? extends BroadcastReceiver> taskClass;

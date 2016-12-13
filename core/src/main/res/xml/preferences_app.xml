@@ -27,6 +27,12 @@
             android:summaryOff="@string/preference_giveaway_show_pinned_off"
             android:summaryOn="@string/preference_giveaway_show_pinned_on"
             android:title="@string/preference_giveaway_show_pinned" />
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="preference_giveaway_show_auto_join"
+            android:summaryOff="@string/preference_giveaway_show_auto_join_off"
+            android:summaryOn="@string/preference_giveaway_show_auto_join_on"
+            android:title="@string/preference_giveaway_show_auto_join" />
     </PreferenceCategory>
 
     <PreferenceCategory

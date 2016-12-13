@@ -156,6 +156,10 @@
     <string name="preference_giveaway_show_pinned_on">Always showing at the top</string>
     <string name="preference_giveaway_show_pinned_off">Not highlighted in a special way</string>
 
+    <string name="preference_giveaway_show_auto_join">Auto join giveaways</string>
+    <string name="preference_giveaway_show_auto_join_on">Yes</string>
+    <string name="preference_giveaway_show_auto_join_off">No</string>
+
     <string name="preferences_discussions">Discussions</string>
     <string name="preference_sidebar_discussion_list">Navigation Items</string>
     <string name="preference_discussion_comments_reversed">Inverse Comment Order</string>

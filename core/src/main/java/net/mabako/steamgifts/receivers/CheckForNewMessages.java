@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -12,12 +13,14 @@ import android.text.TextUtils;
 import android.text.style.StyleSpan;
 import android.util.Log;
 
+import net.mabako.sgtools.AutoJoinRecommendedGiveawayTask;
 import net.mabako.steamgifts.activities.DetailActivity;
 import net.mabako.steamgifts.activities.UrlHandlingActivity;
 import net.mabako.steamgifts.adapters.IEndlessAdaptable;
 import net.mabako.steamgifts.adapters.viewholder.StringUtils;
 import net.mabako.steamgifts.core.R;
 import net.mabako.steamgifts.data.Comment;
+import net.mabako.steamgifts.fragments.GiveawayListFragment;
 import net.mabako.steamgifts.fragments.interfaces.ILoadItemsListener;
 import net.mabako.steamgifts.persistentdata.SteamGiftsUserData;
 import net.mabako.steamgifts.tasks.LoadMessagesTask;
@@ -42,6 +45,13 @@ public class CheckForNewMessages extends AbstractNotificationCheckReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        //attempt to auto-enter giveaways
+        if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean("preference_giveaway_show_auto_join", false)) {
+            AutoJoinRecommendedGiveawayTask autoJoinRecommendedGiveawayTask = new AutoJoinRecommendedGiveawayTask(1, GiveawayListFragment.Type.RECOMMENDED, "", true, context);
+            autoJoinRecommendedGiveawayTask.execute();
+        }
+
+        //execute the rest of the flow
         String action = intent.getAction();
         if (TextUtils.isEmpty(action)) {
             Log.v(TAG, "Checking for new messages...");
