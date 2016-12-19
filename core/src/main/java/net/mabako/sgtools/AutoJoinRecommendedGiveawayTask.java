@@ -21,6 +21,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
@@ -53,40 +56,55 @@ public class AutoJoinRecommendedGiveawayTask extends AsyncTask<Void, Void, List<
 
         try {
             // Fetch the Giveaway page
+            List<Giveaway> giveaways = GetGiveaways(GiveawayListFragment.Type.RECOMMENDED);
+            List<Giveaway> wgiveaways = GetGiveaways(GiveawayListFragment.Type.WISHLIST);
+            giveaways.addAll(wgiveaways);
 
-            Connection jsoup = Jsoup.connect("https://www.steamgifts.com/giveaways/search")
-                    .userAgent(Constants.JSOUP_USER_AGENT)
-                    .timeout(Constants.JSOUP_TIMEOUT);
-            jsoup.data("page", Integer.toString(page));
+            //only consider not joined giveaways
+            List<Giveaway> giveawaysToEnter = new ArrayList<>(giveaways.size());
+            for (Giveaway giveaway : giveaways) {
+                if (!giveaway.isEntered())
+                {
+                    giveawaysToEnter.add(giveaway);
+                }
+            }
 
-            if (searchQuery != null)
-                jsoup.data("q", searchQuery);
-
-            if (type != GiveawayListFragment.Type.ALL)
-                jsoup.data("type", type.name().toLowerCase(Locale.ENGLISH));
-
-            steamGiftsUserData.getCurrent(context);
-
-            if (SteamGiftsUserData.getCurrent(context).isLoggedIn())
-                jsoup.cookie("PHPSESSID", SteamGiftsUserData.getCurrent(context).getSessionId());
-
-            Document document = jsoup.get();
-
-            // Fetch the xsrf token
-            Element xsrfToken = document.select("input[name=xsrf_token]").first();
-            if (xsrfToken != null)
-                foundXsrfToken = xsrfToken.attr("value");
-
-            // Do away with pinned giveaways.
-            if (!showPinnedGiveaways)
-                document.select(".pinned-giveaways__outer-wrap").html("");
-
-            // Parse all rows of giveaways
-            return Utils.loadGiveawaysFromList(document);
+            return giveawaysToEnter;
         } catch (Exception e) {
             Log.e(TAG, "Error fetching URL", e);
             return null;
         }
+    }
+
+    private List<Giveaway> GetGiveaways(GiveawayListFragment.Type type) throws IOException {
+        Connection jsoup = Jsoup.connect("https://www.steamgifts.com/giveaways/search")
+                .userAgent(Constants.JSOUP_USER_AGENT)
+                .timeout(Constants.JSOUP_TIMEOUT);
+        jsoup.data("page", Integer.toString(page));
+
+        if (searchQuery != null)
+            jsoup.data("q", searchQuery);
+
+        jsoup.data("type", type.name().toLowerCase(Locale.ENGLISH));
+
+        steamGiftsUserData.getCurrent(context);
+
+        if (SteamGiftsUserData.getCurrent(context).isLoggedIn())
+            jsoup.cookie("PHPSESSID", SteamGiftsUserData.getCurrent(context).getSessionId());
+
+        Document document = jsoup.get();
+
+        // Fetch the xsrf token
+        Element xsrfToken = document.select("input[name=xsrf_token]").first();
+        if (xsrfToken != null)
+            foundXsrfToken = xsrfToken.attr("value");
+
+        // Do away with pinned giveaways.
+        if (!showPinnedGiveaways)
+            document.select(".pinned-giveaways__outer-wrap").html("");
+
+        // Parse all rows of giveaways
+        return Utils.loadGiveawaysFromList(document);
     }
 
     @Override
@@ -126,7 +144,7 @@ public class AutoJoinRecommendedGiveawayTask extends AsyncTask<Void, Void, List<
             enterLeaveTask.execute();
         }
         else {
-            createNotification("SteamGifts", "AutoJoin completed (" + joinedGiveawaysCount + " joined)", context);
+            createNotification("SteamGifts", "AutoJoin completed (" + joinedGiveawaysCount + "/" + giveawaysList.size() + " joined)", context);
         }
     }
 
