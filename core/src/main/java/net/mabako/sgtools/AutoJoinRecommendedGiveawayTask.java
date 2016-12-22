@@ -42,6 +42,8 @@ public class AutoJoinRecommendedGiveawayTask extends AsyncTask<Void, Void, List<
     private int NOTIFICATION_ID = 1;
     private int joinedGiveawaysCount;
 
+    private String errorMessage = "";
+
     public AutoJoinRecommendedGiveawayTask(int page, GiveawayListFragment.Type type, String searchQuery, boolean showPinnedGiveaways, Context context) {
         this.page = page;
         this.type = type;
@@ -109,42 +111,60 @@ public class AutoJoinRecommendedGiveawayTask extends AsyncTask<Void, Void, List<
 
     @Override
     protected void onPostExecute(List<Giveaway> result) {
+        this.errorMessage = "";
         super.onPostExecute(result);
         joinedGiveawaysCount = 0;
         doDelegation(result, 0);
-
-//        for (net.mabako.steamgifts.data.Giveaway giveaway : result) {
-//            if (!giveaway.isEntered()) {
-//                this.enterGiveaway(giveaway);
-//            }
-//        }
     }
 
     private void doDelegation(final List<Giveaway> giveawaysList, final int index)
     {
         if (SteamGiftsUserData.getCurrent(context).getPoints() > 10) {
-            EnterLeaveGiveawayTask enterLeaveTask = new EnterLeaveGiveawayTask(new IHasEnterableGiveaways() {
-                @Override
-                public void requestEnterLeave(String giveawayId, String what, String xsrfToken) {
+            try {
 
-                }
+                if (giveawaysList.get(index).getPoints() > SteamGiftsUserData.getCurrent(context).getPoints()) { //skip to next if we dont have enough points
 
-                @Override
-                public void onEnterLeaveResult(String giveawayId, String what, Boolean success, boolean propagate) {
-                    if (success) {
-                        Log.v(TAG, "entered giveaway " + giveawayId);
-                    } else {
-                        Log.v(TAG, "failure on giveaway " + giveawayId);
-                    }
-                    joinedGiveawaysCount ++;
                     doDelegation(giveawaysList, index + 1);
                 }
-            }, null, giveawaysList.get(index).getGiveawayId(), this.foundXsrfToken, GiveawayDetailFragment.ENTRY_INSERT);
+                else {
+                    IHasEnterableGiveaways hasEnterableGiveaways = new IHasEnterableGiveaways() {
+                        @Override
+                        public void requestEnterLeave(String giveawayId, String what, String xsrfToken) {
 
-            enterLeaveTask.execute();
+                        }
+
+                        @Override
+                        public void onEnterLeaveResult(String giveawayId, String what, Boolean success, boolean propagate) {
+                            if (success) {
+                                Log.v(TAG, "entered giveaway " + giveawayId);
+                            } else {
+                                Log.v(TAG, "failure on giveaway " + giveawayId);
+                            }
+                            joinedGiveawaysCount++;
+                            doDelegation(giveawaysList, index + 1);
+                        }
+                    };
+
+                    EnterLeaveGiveawayTask enterLeaveTask = new EnterLeaveGiveawayTask(hasEnterableGiveaways,
+                            null,
+                            giveawaysList.get(index).getGiveawayId(),
+                            this.foundXsrfToken,
+                            GiveawayDetailFragment.ENTRY_INSERT);
+
+                    enterLeaveTask.execute();
+                }
+            }
+            catch (Exception ex) {
+                this.errorMessage += ex.getMessage() + System.getProperty("line.separator");;
+            }
         }
         else {
-            createNotification("SteamGifts", "AutoJoin completed (" + joinedGiveawaysCount + "/" + giveawaysList.size() + " joined)", context);
+            String notificationText = "AutoJoin completed (" + joinedGiveawaysCount + "/" + giveawaysList.size() + " joined)";
+            if (errorMessage != null && errorMessage != "") {
+                notificationText += System.getProperty("line.separator") + "Messages: " + System.getProperty("line.separator") + errorMessage;
+            }
+
+            createNotification("SteamGifts", notificationText, context);
         }
     }
 
@@ -160,30 +180,7 @@ public class AutoJoinRecommendedGiveawayTask extends AsyncTask<Void, Void, List<
 
 
         //Show the notification
-        //mNotificationManager.notify(NOTIFICATION_ID, builder.build());
         mNotificationManager.notify(NOTIFICATION_ID, builder.getNotification());
 
     }
-
-//    private void enterGiveaway(Giveaway giveaway) {
-//        if (SteamGiftsUserData.getCurrent(context).getPoints() > 10) {
-//            EnterLeaveGiveawayTask enterLeaveTask = new EnterLeaveGiveawayTask(new IHasEnterableGiveaways() {
-//                @Override
-//                public void requestEnterLeave(String giveawayId, String what, String xsrfToken) {
-//
-//                }
-//
-//                @Override
-//                public void onEnterLeaveResult(String giveawayId, String what, Boolean success, boolean propagate) {
-//                    if (success) {
-//                        Log.v(TAG, "entered giveaway " + giveawayId);
-//                    } else {
-//                        Log.v(TAG, "failure on giveaway " + giveawayId);
-//                    }
-//                }
-//            }, null, giveaway.getGiveawayId(), this.foundXsrfToken, GiveawayDetailFragment.ENTRY_INSERT);
-//
-//            enterLeaveTask.execute();
-//        }
-//    }
 }
