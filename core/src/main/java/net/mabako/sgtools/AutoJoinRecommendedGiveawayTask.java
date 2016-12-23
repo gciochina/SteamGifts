@@ -21,6 +21,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -54,7 +57,7 @@ public class AutoJoinRecommendedGiveawayTask extends AsyncTask<Void, Void, List<
 
     @Override
     protected List<Giveaway> doInBackground(Void... params) {
-        Log.d(TAG, "Fetching giveaways for page " + page);
+        appendLog("Fetching giveaways for page " + page);
 
         try {
             // Fetch the Giveaway page
@@ -73,7 +76,7 @@ public class AutoJoinRecommendedGiveawayTask extends AsyncTask<Void, Void, List<
 
             return giveawaysToEnter;
         } catch (Exception e) {
-            Log.e(TAG, "Error fetching URL", e);
+            appendLog("Error fetching URL (" + e.getMessage() + ")");
             return null;
         }
     }
@@ -119,53 +122,41 @@ public class AutoJoinRecommendedGiveawayTask extends AsyncTask<Void, Void, List<
 
     private void doDelegation(final List<Giveaway> giveawaysList, final int index)
     {
-        if (SteamGiftsUserData.getCurrent(context).getPoints() > 10) {
-            try {
-
-                if (giveawaysList.get(index).getPoints() > SteamGiftsUserData.getCurrent(context).getPoints()) { //skip to next if we dont have enough points
-
-                    doDelegation(giveawaysList, index + 1);
-                }
-                else {
-                    IHasEnterableGiveaways hasEnterableGiveaways = new IHasEnterableGiveaways() {
-                        @Override
-                        public void requestEnterLeave(String giveawayId, String what, String xsrfToken) {
-
-                        }
-
-                        @Override
-                        public void onEnterLeaveResult(String giveawayId, String what, Boolean success, boolean propagate) {
-                            if (success) {
-                                Log.v(TAG, "entered giveaway " + giveawayId);
-                            } else {
-                                Log.v(TAG, "failure on giveaway " + giveawayId);
-                            }
-                            joinedGiveawaysCount++;
-                            doDelegation(giveawaysList, index + 1);
-                        }
-                    };
-
-                    EnterLeaveGiveawayTask enterLeaveTask = new EnterLeaveGiveawayTask(hasEnterableGiveaways,
-                            null,
-                            giveawaysList.get(index).getGiveawayId(),
-                            this.foundXsrfToken,
-                            GiveawayDetailFragment.ENTRY_INSERT);
-
-                    enterLeaveTask.execute();
-                }
-            }
-            catch (Exception ex) {
-                this.errorMessage += ex.getMessage() + System.getProperty("line.separator");;
-            }
-        }
-        else {
+        if (SteamGiftsUserData.getCurrent(context).getPoints() < 10 || index >= giveawaysList.size()) {
             String notificationText = "AutoJoin completed (" + joinedGiveawaysCount + "/" + giveawaysList.size() + " joined)";
-            if (errorMessage != null && errorMessage != "") {
-                notificationText += System.getProperty("line.separator") + "Messages: " + System.getProperty("line.separator") + errorMessage;
-            }
-
             createNotification("SteamGifts", notificationText, context);
         }
+        try {
+            IHasEnterableGiveaways hasEnterableGiveaways = new IHasEnterableGiveaways() {
+                @Override
+                public void requestEnterLeave(String giveawayId, String what, String xsrfToken) {
+
+                }
+
+                @Override
+                public void onEnterLeaveResult(String giveawayId, String what, Boolean success, boolean propagate) {
+                    if (success) {
+                        appendLog("entered giveaway " + giveawayId);
+                    } else {
+                        appendLog("failure on giveaway " + giveawayId);
+                    }
+                    joinedGiveawaysCount++;
+                    doDelegation(giveawaysList, index + 1);
+                }
+            };
+
+            EnterLeaveGiveawayTask enterLeaveTask = new EnterLeaveGiveawayTask(hasEnterableGiveaways,
+                    null,
+                    giveawaysList.get(index).getGiveawayId(),
+                    this.foundXsrfToken,
+                    GiveawayDetailFragment.ENTRY_INSERT);
+
+            enterLeaveTask.execute();
+        }
+        catch (Exception ex) {
+            appendLog(ex.getMessage());
+        }
+
     }
 
     private void createNotification(String contentTitle, String contentText,Context context) {
@@ -182,5 +173,35 @@ public class AutoJoinRecommendedGiveawayTask extends AsyncTask<Void, Void, List<
         //Show the notification
         mNotificationManager.notify(NOTIFICATION_ID, builder.getNotification());
 
+    }
+
+    private void appendLog(String text)
+    {
+        File logFile = new File("sdcard/sg_beta_log.file");
+        if (!logFile.exists())
+        {
+            try
+            {
+                logFile.createNewFile();
+            }
+            catch (IOException e)
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+        try
+        {
+            //BufferedWriter for performance, true to set append to file flag
+            BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true));
+            buf.append(text);
+            buf.newLine();
+            buf.close();
+        }
+        catch (IOException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 }
