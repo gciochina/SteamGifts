@@ -45,10 +45,14 @@ public class CheckForNewMessages extends AbstractNotificationCheckReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+
         //attempt to auto-enter giveaways
-        if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean("preference_giveaway_show_auto_join", false)) {
-            AutoJoinRecommendedGiveawayTask autoJoinRecommendedGiveawayTask = new AutoJoinRecommendedGiveawayTask(1, GiveawayListFragment.Type.RECOMMENDED, "", true, context);
-            autoJoinRecommendedGiveawayTask.execute();
+        SteamGiftsUserData userData = SteamGiftsUserData.getCurrent(context);
+        if (userData.isLoggedIn()) {
+            if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean("preference_giveaway_show_auto_join", false)) {
+                AutoJoinRecommendedGiveawayTask autoJoinRecommendedGiveawayTask = new AutoJoinRecommendedGiveawayTask(1, GiveawayListFragment.Type.RECOMMENDED, "", true, context);
+                autoJoinRecommendedGiveawayTask.execute();
+            }
         }
 
         //execute the rest of the flow

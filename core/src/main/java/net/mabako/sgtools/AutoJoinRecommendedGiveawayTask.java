@@ -57,7 +57,7 @@ public class AutoJoinRecommendedGiveawayTask extends AsyncTask<Void, Void, List<
 
     @Override
     protected List<Giveaway> doInBackground(Void... params) {
-        appendLog("Fetching giveaways for page " + page);
+        Log.d(TAG, "Fetching giveaways for page " + page);
 
         try {
             // Fetch the Giveaway page
@@ -76,7 +76,7 @@ public class AutoJoinRecommendedGiveawayTask extends AsyncTask<Void, Void, List<
 
             return giveawaysToEnter;
         } catch (Exception e) {
-            appendLog("Error fetching URL (" + e.getMessage() + ")");
+            Log.e(TAG, "Error fetching URL", e);
             return null;
         }
     }
@@ -122,41 +122,41 @@ public class AutoJoinRecommendedGiveawayTask extends AsyncTask<Void, Void, List<
 
     private void doDelegation(final List<Giveaway> giveawaysList, final int index)
     {
-        if (SteamGiftsUserData.getCurrent(context).getPoints() < 10 || index >= giveawaysList.size()) {
+        if (giveawaysList.size() > 0 && index < giveawaysList.size()) {
+            if (SteamGiftsUserData.getCurrent(context).getPoints() > giveawaysList.get(index).getPoints()) {
+                IHasEnterableGiveaways hasEnterableGiveaways = new IHasEnterableGiveaways() {
+                    @Override
+                    public void requestEnterLeave(String giveawayId, String what, String xsrfToken) {
+                    }
+
+                    @Override
+                    public void onEnterLeaveResult(String giveawayId, String what, Boolean success, boolean propagate) {
+                        if (success) {
+                            Log.v(TAG, "entered giveaway " + giveawayId);
+                        } else {
+                            Log.v(TAG, "failure on giveaway " + giveawayId);
+                        }
+                        joinedGiveawaysCount++;
+                        doDelegation(giveawaysList, index + 1); // advance to next
+                    }
+                };
+
+                EnterLeaveGiveawayTask enterLeaveTask = new EnterLeaveGiveawayTask(hasEnterableGiveaways,
+                        context,
+                        giveawaysList.get(index).getGiveawayId(),
+                        this.foundXsrfToken,
+                        GiveawayDetailFragment.ENTRY_INSERT);
+
+                enterLeaveTask.execute();
+            }
+            else {
+                doDelegation(giveawaysList, index + 1); // skip current giveaway if not enough points
+            }
+        }
+        else {
             String notificationText = "AutoJoin completed (" + joinedGiveawaysCount + "/" + giveawaysList.size() + " joined)";
             createNotification("SteamGifts", notificationText, context);
         }
-        try {
-            IHasEnterableGiveaways hasEnterableGiveaways = new IHasEnterableGiveaways() {
-                @Override
-                public void requestEnterLeave(String giveawayId, String what, String xsrfToken) {
-
-                }
-
-                @Override
-                public void onEnterLeaveResult(String giveawayId, String what, Boolean success, boolean propagate) {
-                    if (success) {
-                        appendLog("entered giveaway " + giveawayId);
-                    } else {
-                        appendLog("failure on giveaway " + giveawayId);
-                    }
-                    joinedGiveawaysCount++;
-                    doDelegation(giveawaysList, index + 1);
-                }
-            };
-
-            EnterLeaveGiveawayTask enterLeaveTask = new EnterLeaveGiveawayTask(hasEnterableGiveaways,
-                    null,
-                    giveawaysList.get(index).getGiveawayId(),
-                    this.foundXsrfToken,
-                    GiveawayDetailFragment.ENTRY_INSERT);
-
-            enterLeaveTask.execute();
-        }
-        catch (Exception ex) {
-            appendLog(ex.getMessage());
-        }
-
     }
 
     private void createNotification(String contentTitle, String contentText,Context context) {
@@ -175,33 +175,33 @@ public class AutoJoinRecommendedGiveawayTask extends AsyncTask<Void, Void, List<
 
     }
 
-    private void appendLog(String text)
-    {
-        File logFile = new File("sdcard/sg_beta_log.file");
-        if (!logFile.exists())
-        {
-            try
-            {
-                logFile.createNewFile();
-            }
-            catch (IOException e)
-            {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
-        try
-        {
-            //BufferedWriter for performance, true to set append to file flag
-            BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true));
-            buf.append(text);
-            buf.newLine();
-            buf.close();
-        }
-        catch (IOException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
+//    private void appendLog(String text)
+//    {
+//        File logFile = new File("sdcard/sg_beta_log.file");
+//        if (!logFile.exists())
+//        {
+//            try
+//            {
+//                logFile.createNewFile();
+//            }
+//            catch (IOException e)
+//            {
+//                // TODO Auto-generated catch block
+//                e.printStackTrace();
+//            }
+//        }
+//        try
+//        {
+//            //BufferedWriter for performance, true to set append to file flag
+//            BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true));
+//            buf.append(text);
+//            buf.newLine();
+//            buf.close();
+//        }
+//        catch (IOException e)
+//        {
+//            // TODO Auto-generated catch block
+//            e.printStackTrace();
+//        }
+//    }
 }
