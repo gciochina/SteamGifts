@@ -21,6 +21,7 @@ android {
     lintOptions {
         warning 'InvalidPackage' // okio references java.nio, which is not part of android.
     }
+    buildToolsVersion '25.0.0'
 }
 
 dependencies {

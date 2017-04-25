@@ -63,7 +63,9 @@ public class AutoJoinRecommendedGiveawayTask extends AsyncTask<Void, Void, List<
             // Fetch the Giveaway page
             List<Giveaway> giveaways = GetGiveaways(GiveawayListFragment.Type.RECOMMENDED);
             List<Giveaway> wgiveaways = GetGiveaways(GiveawayListFragment.Type.WISHLIST);
+            List<Giveaway> ggiveaways = GetGiveaways(GiveawayListFragment.Type.GROUP);
             giveaways.addAll(wgiveaways);
+            giveaways.addAll(ggiveaways);
 
             //only consider not joined giveaways
             List<Giveaway> giveawaysToEnter = new ArrayList<>(giveaways.size());
