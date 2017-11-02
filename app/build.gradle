@@ -1,16 +1,23 @@
 apply plugin: 'com.android.application'
 
 android {
+    signingConfigs {
+        config {
+            keyAlias 'tauceti'
+            keyPassword 'tauceti'
+            storeFile file('C:/Users/Gabriel/androidkeystore.jks')
+            storePassword 'tauceti'
+        }
+    }
     compileSdkVersion rootProject.ext.compileSdkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
-
     defaultConfig {
         applicationId 'net.mabako.steamgifts'
         minSdkVersion 15
-        targetSdkVersion 23
-        versionCode rootProject.ext.versionCode
-        versionName rootProject.ext.versionName
+        targetSdkVersion 19
+        versionName '1.0.0'
         project.ext.set('archivesBaseName', 'SteamGifts')
+        signingConfig signingConfigs.config
     }
     buildTypes {
         release {
@@ -36,7 +43,6 @@ android {
             null
         }
     }
-
     lintOptions {
         disable 'GoogleAppIndexingWarning'
         warning 'InvalidPackage' // okio references java.nio, which is not part of android.
