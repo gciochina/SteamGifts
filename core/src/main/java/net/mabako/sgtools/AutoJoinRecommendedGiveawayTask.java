@@ -26,6 +26,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -75,6 +77,13 @@ public class AutoJoinRecommendedGiveawayTask extends AsyncTask<Void, Void, List<
                     giveawaysToEnter.add(giveaway);
                 }
             }
+
+            Collections.sort(giveawaysToEnter, new Comparator<Giveaway>(){
+                public int compare(Giveaway obj1, Giveaway obj2) {
+                    // Descending order
+                    return Integer.valueOf(obj2.getPoints()).compareTo(obj1.getPoints());
+                }
+            });
 
             return giveawaysToEnter;
         } catch (Exception e) {
@@ -176,34 +185,4 @@ public class AutoJoinRecommendedGiveawayTask extends AsyncTask<Void, Void, List<
         mNotificationManager.notify(NOTIFICATION_ID, builder.getNotification());
 
     }
-
-//    private void appendLog(String text)
-//    {
-//        File logFile = new File("sdcard/sg_beta_log.file");
-//        if (!logFile.exists())
-//        {
-//            try
-//            {
-//                logFile.createNewFile();
-//            }
-//            catch (IOException e)
-//            {
-//                // TODO Auto-generated catch block
-//                e.printStackTrace();
-//            }
-//        }
-//        try
-//        {
-//            //BufferedWriter for performance, true to set append to file flag
-//            BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true));
-//            buf.append(text);
-//            buf.newLine();
-//            buf.close();
-//        }
-//        catch (IOException e)
-//        {
-//            // TODO Auto-generated catch block
-//            e.printStackTrace();
-//        }
-//    }
 }
